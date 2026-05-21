@@ -3,3 +3,6 @@ export type { GetlawbResponse, QueryRequest, Finding, RiskLevel, QueryType } fro
 
 export { GitlawbIntegration } from './gitlawb';
 export type { GitlawbConfig, WatchConfig, PREvent } from './gitlawb';
+
+export { GitlawbWebhookServer } from './webhook';
+export type { WebhookConfig, GitlawbWebhookEvent } from './webhook';
