@@ -3,6 +3,7 @@ import { Message, QuickAction } from './types';
 import { askLex } from './api';
 import { ChatMessage } from './components/ChatMessage';
 import { AnalysisCard } from './components/AnalysisCard';
+import { LandingPage } from './components/LandingPage';
 import './App.css';
 
 const QUICK_ACTIONS: QuickAction[] = [
@@ -26,9 +27,14 @@ function uid() {
 }
 
 export default function App() {
+  const [page, setPage] = useState<'landing' | 'chat'>('landing');
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (page === 'landing') {
+    return <LandingPage onEnter={() => setPage('chat')} />;
+  }
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -129,6 +135,7 @@ export default function App() {
       {/* Main */}
       <main className="chat-panel">
         <header className="chat-header">
+          <button className="back-btn" onClick={() => setPage('landing')}>← Back</button>
           <div className="lex-avatar">L</div>
           <div>
             <div className="lex-name">Lex</div>
