@@ -97,7 +97,6 @@ describe('GitlawbIntegration', () => {
       const headers = (integration as any).buildSignatureHeaders('POST', '/api/v1/agents', body);
 
       // Reconstruct the signature base to verify
-      const date = headers['date'];
       const contentDigest = headers['content-digest'];
       const createdMatch = headers['signature-input'].match(/created=(\d+)/);
       const created = createdMatch ? createdMatch[1] : '';

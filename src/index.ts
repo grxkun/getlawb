@@ -6,3 +6,6 @@ export type { GitlawbConfig, WatchConfig, PREvent } from './gitlawb';
 
 export { GitlawbWebhookServer } from './webhook';
 export type { WebhookConfig, GitlawbWebhookEvent } from './webhook';
+
+export { GitlawbAutoReply } from './autoreply';
+export type { AutoReplyConfig } from './autoreply';
