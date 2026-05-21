@@ -1,0 +1,93 @@
+.analysis-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  align-self: flex-start;
+  max-width: 600px;
+  width: 100%;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.card-title { font-weight: 600; font-size: 13px; color: var(--text); }
+
+.risk-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.risk-low    { background: rgba(34,197,94,.15); color: #22c55e; }
+.risk-medium { background: rgba(234,179,8,.15); color: #eab308; }
+.risk-high   { background: rgba(249,115,22,.15); color: #f97316; }
+.risk-critical { background: rgba(239,68,68,.15); color: #ef4444; }
+
+.card-meta {
+  display: flex;
+  gap: 24px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.meta-item { display: flex; flex-direction: column; gap: 2px; }
+.meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); }
+.meta-value { font-size: 13px; font-weight: 500; color: var(--text); }
+.mono { font-family: var(--mono); font-size: 12px; }
+
+.no-findings {
+  padding: 16px;
+  font-size: 14px;
+  color: var(--green);
+}
+
+.findings { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+.findings-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); margin-bottom: 4px; }
+
+.finding {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border-left: 3px solid var(--border);
+  background: var(--surface2);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.finding-low    { border-left-color: #22c55e; }
+.finding-medium { border-left-color: #eab308; }
+.finding-high   { border-left-color: #f97316; }
+.finding-critical { border-left-color: #ef4444; }
+
+.finding-header { display: flex; align-items: center; gap: 6px; }
+.finding-sev { font-size: 13px; }
+.finding-type { font-size: 12px; font-weight: 600; color: var(--text); }
+.finding-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.07);
+  color: var(--text-dim);
+}
+
+.finding-desc { font-size: 13px; color: var(--text); line-height: 1.5; }
+.finding-fix  { font-size: 12px; color: var(--text-dim); }
+.finding-ref  { font-size: 12px; color: var(--purple); }
+
+.card-footer {
+  padding: 10px 16px;
+  font-size: 11px;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+}
+.card-footer a { color: var(--purple); text-decoration: none; }
+.card-footer a:hover { text-decoration: underline; }

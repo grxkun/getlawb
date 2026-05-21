@@ -436,6 +436,97 @@ CONTEXT: ${JSON.stringify(request.data.context || {})}`;
   }
 
   /**
+   * Free-form chat with the configured LLM backend.
+   * Used by conversational agents like GetlawbFrontDesk.
+   */
+  async chat(
+    messages: { role: 'user' | 'assistant'; content: string }[],
+    systemPrompt?: string
+  ): Promise<string> {
+    const fullMessages = systemPrompt
+      ? [{ role: 'system' as const, content: systemPrompt }, ...messages]
+      : messages;
+    if (this.baseUrl) {
+      return this.callOpenAICompatibleMessages(fullMessages);
+    }
+    // Anthropic: extract system from messages, pass rest as user/assistant turns
+    const system = fullMessages.find((m) => m.role === 'system')?.content ?? '';
+    const turns = fullMessages.filter((m) => m.role !== 'system');
+    return this.callAnthropicMessages(system, turns as { role: 'user' | 'assistant'; content: string }[]);
+  }
+
+  private callAnthropicMessages(
+    system: string,
+    messages: { role: 'user' | 'assistant'; content: string }[]
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const data = JSON.stringify({ model: this.model, max_tokens: 2048, system, messages });
+      const req = https.request(
+        {
+          hostname: 'api.anthropic.com',
+          port: 443,
+          path: '/v1/messages',
+          method: 'POST',
+          headers: {
+            'x-api-key': this.apiKey,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(data, 'utf8'),
+          },
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (c: Buffer) => (body += c));
+          res.on('end', () => {
+            res.statusCode === 200
+              ? resolve(JSON.parse(body).content[0].text)
+              : reject(new Error(`HTTP ${res.statusCode}: ${body}`));
+          });
+        }
+      );
+      req.on('error', reject);
+      req.write(data);
+      req.end();
+    });
+  }
+
+  private callOpenAICompatibleMessages(
+    messages: { role: string; content: string }[]
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const url = new URL('/v1/chat/completions', this.baseUrl!);
+      const data = JSON.stringify({ model: this.model, max_tokens: 2048, messages });
+      const isHttps = url.protocol === 'https:';
+      const transport = isHttps ? https : http;
+      const req = transport.request(
+        {
+          hostname: url.hostname,
+          port: url.port || (isHttps ? 443 : 80),
+          path: url.pathname,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(data, 'utf8'),
+            ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
+          },
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (c: Buffer) => (body += c));
+          res.on('end', () => {
+            res.statusCode === 200
+              ? resolve(JSON.parse(body).choices[0].message.content)
+              : reject(new Error(`HTTP ${res.statusCode}: ${body}`));
+          });
+        }
+      );
+      req.on('error', reject);
+      req.write(data);
+      req.end();
+    });
+  }
+
+  /**
    * Batch queries
    */
   async queryBatch(requests: QueryRequest[]): Promise<GetlawbResponse[]> {

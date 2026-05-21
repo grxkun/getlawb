@@ -10,6 +10,7 @@
 
 import * as http from 'http';
 import * as crypto from 'crypto';
+import { GetlawbClient } from './client';
 import { GitlawbIntegration } from './gitlawb';
 
 // ============================================================================
@@ -19,6 +20,8 @@ import { GitlawbIntegration } from './gitlawb';
 export interface WebhookConfig {
   /** Port to listen on. Default: 3000 */
   port?: number;
+  /** GetlawbClient instance — used for the /api/ask REST endpoint */
+  client?: GetlawbClient;
   /**
    * HMAC secret set when creating the webhook with `gl webhook create --secret`.
    * If omitted, signature verification is skipped (not recommended for production).
@@ -47,14 +50,17 @@ export interface GitlawbWebhookEvent {
 
 export class GitlawbWebhookServer {
   private readonly integration: GitlawbIntegration;
+  private readonly client: GetlawbClient;
   private readonly config: Required<WebhookConfig>;
   private server: http.Server | null = null;
 
   constructor(integration: GitlawbIntegration, config: WebhookConfig = {}) {
     this.integration = integration;
+    this.client = config.client ?? (integration as any).client as GetlawbClient;
     this.config = {
       port: config.port ?? 3000,
       secret: config.secret ?? '',
+      client: config.client ?? this.client,
       onAnalysis: config.onAnalysis ?? ((event, summary) => {
         console.log(`[getlawb] ${event.event} on ${event.owner}/${event.repo}`);
         console.log(summary);
@@ -66,6 +72,38 @@ export class GitlawbWebhookServer {
   start(): Promise<number> {
     return new Promise((resolve, reject) => {
       this.server = http.createServer((req, res) => {
+        // CORS headers for browser clients (front desk app)
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+        if (req.method === 'OPTIONS') {
+          res.writeHead(204).end();
+          return;
+        }
+
+        // ── /api/ask — legal query endpoint for the front desk web app ──
+        if (req.url === '/api/ask' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk: Buffer) => (body += chunk));
+          req.on('end', async () => {
+            try {
+              const { question } = JSON.parse(body);
+              if (!question) { res.writeHead(400).end(JSON.stringify({ error: 'question required' })); return; }
+              const analysis = await this.client.query({
+                type: 'custom_query',
+                data: { question, context: {} },
+              });
+              res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(analysis));
+            } catch (err) {
+              res.writeHead(500, { 'Content-Type': 'application/json' })
+                .end(JSON.stringify({ error: String(err) }));
+            }
+          });
+          return;
+        }
+
+        // ── /hooks — gitlawb webhook handler ──
         if (req.method !== 'POST') {
           res.writeHead(405).end('Method Not Allowed');
           return;

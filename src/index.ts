@@ -9,3 +9,6 @@ export type { WebhookConfig, GitlawbWebhookEvent } from './webhook';
 
 export { GitlawbAutoReply } from './autoreply';
 export type { AutoReplyConfig } from './autoreply';
+
+export { GetlawbFrontDesk } from './frontdesk';
+export type { FrontDeskConfig } from './frontdesk';
