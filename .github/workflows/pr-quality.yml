@@ -1,0 +1,87 @@
+name: PR Quality Gates
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+  checks: write
+
+jobs:
+  pr-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Label based on file changes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [];
+            const changedFiles = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            const files = changedFiles.data.map(f => f.filename);
+            if (files.some(f => f.startsWith('src/'))) labels.push('sdk');
+            if (files.some(f => f.startsWith('docs/'))) labels.push('documentation');
+            if (files.some(f => f.startsWith('examples/'))) labels.push('example');
+            if (files.some(f => f.startsWith('tests/'))) labels.push('test');
+            if (files.some(f => f === 'package.json')) labels.push('dependencies');
+            if (labels.length > 0) {
+              github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+            }
+
+      - name: Check code coverage
+        run: npm test -- --coverage
+
+      - name: Comment PR checklist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## PR Checklist\n\n- [ ] \`npm test\` passes\n- [ ] \`npm run lint\` passes\n- [ ] \`npm run build\` passes\n- [ ] PR title uses conventional commits (\`feat|fix|docs|chore\`)\n- [ ] README updated if API changed\n- [ ] No \`dist/\` committed`
+            });
+
+      - name: Warn on large PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changedFiles = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            const additions = changedFiles.data.reduce((sum, f) => sum + f.additions, 0);
+            if (additions > 500) {
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `Large PR detected: +${additions} lines. Consider splitting into smaller PRs.`
+              });
+            }

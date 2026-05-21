@@ -1,0 +1,90 @@
+name: Metrics & Trending
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get repo stats
+        id: stats
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const repo = await github.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            core.setOutput('stars', repo.data.stargazers_count);
+            core.setOutput('forks', repo.data.forks_count);
+            core.setOutput('issues', repo.data.open_issues_count);
+
+      - name: Get NPM downloads
+        id: npm-stats
+        run: |
+          DOWNLOADS=$(curl -s https://api.npmjs.org/downloads/point/last-week/getlawb | grep -o '"downloads":[0-9]*' | grep -o '[0-9]*' || echo "0")
+          echo "downloads=$DOWNLOADS" >> $GITHUB_OUTPUT
+
+      - name: Update METRICS.md
+        env:
+          STARS: ${{ steps.stats.outputs.stars }}
+          FORKS: ${{ steps.stats.outputs.forks }}
+          ISSUES: ${{ steps.stats.outputs.issues }}
+          DOWNLOADS: ${{ steps.npm-stats.outputs.downloads }}
+        run: |
+          cat > METRICS.md << EOF
+          # getlawb Growth Metrics
+
+          Last updated: \`$(date -u +'%Y-%m-%d %H:%M:%S UTC')\`
+
+          ## GitHub
+          - **Stars**: $STARS
+          - **Forks**: $FORKS
+          - **Open Issues**: $ISSUES
+
+          ## NPM
+          - **Weekly Downloads**: $DOWNLOADS
+          - **Package**: https://npmjs.com/package/getlawb
+          EOF
+
+      - name: Commit metrics
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add METRICS.md
+          git commit -m "chore: update metrics ($(date -u +'%Y-%m-%d'))" || echo "No changes"
+          git push origin main || echo "Nothing to push"
+
+  release-reminder:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Monday release reminder
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date();
+            if (today.getDay() !== 1) return;
+            const version = require('./package.json').version;
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Weekly Release Reminder (v${version})`,
+              body: `It's Monday. Time to release?\n\n- [ ] Review merged PRs\n- [ ] Update CHANGELOG.md\n- [ ] Bump version\n- [ ] Create GitHub Release\n- [ ] Tweet announcement`,
+              labels: ['release']
+            });
