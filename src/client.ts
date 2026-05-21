@@ -7,6 +7,7 @@
  */
 
 import * as https from 'https';
+import * as http from 'http';
 import * as crypto from 'crypto';
 
 // ============================================================================
@@ -103,16 +104,35 @@ class RequestCache {
 // MAIN CLIENT
 // ============================================================================
 
+export interface GetlawbClientConfig {
+  /** Anthropic API key. Not required when baseUrl points to a local provider like Ollama. */
+  apiKey?: string;
+  /**
+   * OpenAI-compatible base URL, e.g. http://localhost:11434 for Ollama.
+   * When set, uses /v1/chat/completions instead of the Anthropic API.
+   */
+  baseUrl?: string;
+  /** Model name. Defaults to claude-opus-4-7 (Anthropic) or llama3.2:3b (Ollama). */
+  model?: string;
+}
+
 export class GetlawbClient {
   private apiKey: string;
+  private baseUrl: string | null;
   private cache: RequestCache;
-  private model = 'claude-opus-4-7';
+  private model: string;
 
-  constructor(apiKey: string = process.env.ANTHROPIC_API_KEY || '') {
-    if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY is required');
+  constructor(apiKeyOrConfig: string | GetlawbClientConfig = {}) {
+    const config: GetlawbClientConfig =
+      typeof apiKeyOrConfig === 'string' ? { apiKey: apiKeyOrConfig } : apiKeyOrConfig;
+
+    this.baseUrl = config.baseUrl ?? null;
+    this.apiKey = config.apiKey ?? process.env.ANTHROPIC_API_KEY ?? '';
+    this.model = config.model ?? (this.baseUrl ? 'llama3.2:3b' : 'claude-opus-4-7');
+
+    if (!this.baseUrl && !this.apiKey) {
+      throw new Error('Provide apiKey for Anthropic, or baseUrl for a local provider like Ollama');
     }
-    this.apiKey = apiKey;
     this.cache = new RequestCache();
   }
 
@@ -203,9 +223,15 @@ CONTEXT: ${JSON.stringify(request.data.context || {})}`;
   }
 
   /**
-   * Call OpenClaude API
+   * Call the configured LLM backend — Anthropic or any OpenAI-compatible endpoint (e.g. Ollama).
    */
   private callOpenClaude(systemPrompt: string, userMessage: string): Promise<string> {
+    return this.baseUrl
+      ? this.callOpenAICompatible(systemPrompt, userMessage)
+      : this.callAnthropic(systemPrompt, userMessage);
+  }
+
+  private callAnthropic(systemPrompt: string, userMessage: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const data = JSON.stringify({
         model: this.model,
@@ -215,38 +241,85 @@ CONTEXT: ${JSON.stringify(request.data.context || {})}`;
         messages: [{ role: 'user', content: userMessage }],
       });
 
-      const options = {
-        hostname: 'api.anthropic.com',
-        port: 443,
-        path: '/v1/messages',
-        method: 'POST',
-        headers: {
-          'x-api-key': this.apiKey,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(data, 'utf8'),
+      const req = https.request(
+        {
+          hostname: 'api.anthropic.com',
+          port: 443,
+          path: '/v1/messages',
+          method: 'POST',
+          headers: {
+            'x-api-key': this.apiKey,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(data, 'utf8'),
+          },
         },
-      };
-
-      const req = https.request(options, (res: import('http').IncomingMessage) => {
-        let responseData = '';
-        res.on('data', (chunk: Buffer) => {
-          responseData += chunk;
-        });
-        res.on('end', () => {
-          if (res.statusCode === 200) {
-            try {
-              const parsed = JSON.parse(responseData);
-              resolve(parsed.content[0].text);
-            } catch (e) {
-              reject(new Error(`Failed to parse response: ${e}`));
+        (res) => {
+          let body = '';
+          res.on('data', (chunk: Buffer) => (body += chunk));
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              try {
+                resolve(JSON.parse(body).content[0].text);
+              } catch (e) {
+                reject(new Error(`Failed to parse Anthropic response: ${e}`));
+              }
+            } else {
+              reject(new Error(`HTTP ${res.statusCode}: ${body}`));
             }
-          } else {
-            reject(new Error(`HTTP ${res.statusCode}: ${responseData}`));
-          }
-        });
+          });
+        }
+      );
+      req.on('error', reject);
+      req.write(data);
+      req.end();
+    });
+  }
+
+  private callOpenAICompatible(systemPrompt: string, userMessage: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const url = new URL('/v1/chat/completions', this.baseUrl!);
+      const data = JSON.stringify({
+        model: this.model,
+        max_tokens: 4096,
+        temperature: 0.1,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
       });
 
+      const isHttps = url.protocol === 'https:';
+      const transport = isHttps ? https : http;
+
+      const req = transport.request(
+        {
+          hostname: url.hostname,
+          port: url.port || (isHttps ? 443 : 80),
+          path: url.pathname,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(data, 'utf8'),
+            ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
+          },
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (chunk: Buffer) => (body += chunk));
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              try {
+                resolve(JSON.parse(body).choices[0].message.content);
+              } catch (e) {
+                reject(new Error(`Failed to parse OpenAI-compatible response: ${e}`));
+              }
+            } else {
+              reject(new Error(`HTTP ${res.statusCode}: ${body}`));
+            }
+          });
+        }
+      );
       req.on('error', reject);
       req.write(data);
       req.end();
