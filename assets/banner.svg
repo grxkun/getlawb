@@ -1,0 +1,139 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0a0f"/>
+      <stop offset="100%" style="stop-color:#0d1117"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0"/>
+      <stop offset="30%" style="stop-color:#6366f1;stop-opacity:1"/>
+      <stop offset="70%" style="stop-color:#8b5cf6;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="720" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.04" stroke="#6366f1" stroke-width="1">
+    <line x1="0" y1="120" x2="1280" y2="120"/>
+    <line x1="0" y1="240" x2="1280" y2="240"/>
+    <line x1="0" y1="360" x2="1280" y2="360"/>
+    <line x1="0" y1="480" x2="1280" y2="480"/>
+    <line x1="0" y1="600" x2="1280" y2="600"/>
+    <line x1="160" y1="0" x2="160" y2="720"/>
+    <line x1="320" y1="0" x2="320" y2="720"/>
+    <line x1="480" y1="0" x2="480" y2="720"/>
+    <line x1="640" y1="0" x2="640" y2="720"/>
+    <line x1="800" y1="0" x2="800" y2="720"/>
+    <line x1="960" y1="0" x2="960" y2="720"/>
+    <line x1="1120" y1="0" x2="1120" y2="720"/>
+  </g>
+
+  <!-- Glow orb left -->
+  <ellipse cx="200" cy="360" rx="300" ry="300" fill="#6366f1" opacity="0.04"/>
+  <!-- Glow orb right -->
+  <ellipse cx="1080" cy="360" rx="300" ry="300" fill="#8b5cf6" opacity="0.04"/>
+
+  <!-- Top accent line -->
+  <rect x="0" y="0" width="1280" height="2" fill="url(#lineGrad)" opacity="0.6"/>
+
+  <!-- Icon: shield with gavel -->
+  <g transform="translate(530, 180)" filter="url(#softglow)">
+    <!-- Shield shape -->
+    <path d="M55 0 L110 20 L110 65 Q110 105 55 125 Q0 105 0 65 L0 20 Z"
+          fill="none" stroke="url(#accent)" stroke-width="2.5" opacity="0.9"/>
+    <!-- Inner shield fill -->
+    <path d="M55 8 L102 26 L102 65 Q102 98 55 116 Q8 98 8 65 L8 26 Z"
+          fill="#6366f1" opacity="0.08"/>
+    <!-- Gavel head -->
+    <rect x="30" y="42" width="36" height="14" rx="3"
+          fill="url(#accent)" opacity="0.85" transform="rotate(-35 48 49)"/>
+    <!-- Gavel handle -->
+    <line x1="62" y1="58" x2="82" y2="82" stroke="url(#accent)" stroke-width="5"
+          stroke-linecap="round" opacity="0.85"/>
+  </g>
+
+  <!-- Main title -->
+  <text x="640" y="358" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace"
+        font-size="88" font-weight="700" fill="white" text-anchor="middle"
+        letter-spacing="-2" opacity="0.97">getlawb</text>
+
+  <!-- Accent underline -->
+  <rect x="440" y="372" width="400" height="3" rx="2" fill="url(#lineGrad)" opacity="0.8"/>
+
+  <!-- Tagline -->
+  <text x="640" y="430" font-family="'SF Pro Display', 'Segoe UI', sans-serif"
+        font-size="22" fill="#94a3b8" text-anchor="middle" letter-spacing="0.5">
+    Legal reasoning for Web3 · Powered by OpenClaude · Native to gitlawb
+  </text>
+
+  <!-- Pills row -->
+  <g transform="translate(640, 510)" text-anchor="middle">
+
+    <!-- Pill 1: Contract Audit -->
+    <g transform="translate(-320, 0)">
+      <rect x="-72" y="-16" width="144" height="32" rx="16"
+            fill="#6366f1" fill-opacity="0.12" stroke="#6366f1" stroke-opacity="0.3" stroke-width="1"/>
+      <text font-family="'SF Mono', monospace" font-size="13" fill="#a5b4fc" letter-spacing="0.3">contract_audit</text>
+    </g>
+
+    <!-- Pill 2: Regulatory -->
+    <g transform="translate(-150, 0)">
+      <rect x="-80" y="-16" width="160" height="32" rx="16"
+            fill="#8b5cf6" fill-opacity="0.12" stroke="#8b5cf6" stroke-opacity="0.3" stroke-width="1"/>
+      <text font-family="'SF Mono', monospace" font-size="13" fill="#c4b5fd" letter-spacing="0.3">regulatory_check</text>
+    </g>
+
+    <!-- Pill 3: Governance -->
+    <g transform="translate(20, 0)">
+      <rect x="-86" y="-16" width="172" height="32" rx="16"
+            fill="#6366f1" fill-opacity="0.12" stroke="#6366f1" stroke-opacity="0.3" stroke-width="1"/>
+      <text font-family="'SF Mono', monospace" font-size="13" fill="#a5b4fc" letter-spacing="0.3">governance_validation</text>
+    </g>
+
+    <!-- Pill 4: Risk -->
+    <g transform="translate(190, 0)">
+      <rect x="-68" y="-16" width="136" height="32" rx="16"
+            fill="#8b5cf6" fill-opacity="0.12" stroke="#8b5cf6" stroke-opacity="0.3" stroke-width="1"/>
+      <text font-family="'SF Mono', monospace" font-size="13" fill="#c4b5fd" letter-spacing="0.3">risk_assessment</text>
+    </g>
+
+    <!-- Pill 5: Precedent -->
+    <g transform="translate(330, 0)">
+      <rect x="-68" y="-16" width="136" height="32" rx="16"
+            fill="#6366f1" fill-opacity="0.12" stroke="#6366f1" stroke-opacity="0.3" stroke-width="1"/>
+      <text font-family="'SF Mono', monospace" font-size="13" fill="#a5b4fc" letter-spacing="0.3">legal_precedent</text>
+    </g>
+
+  </g>
+
+  <!-- Bottom bar -->
+  <rect x="0" y="660" width="1280" height="60" fill="#0a0a0f" opacity="0.6"/>
+  <text x="640" y="697" font-family="'SF Pro Display', 'Segoe UI', sans-serif"
+        font-size="14" fill="#475569" text-anchor="middle" letter-spacing="1.5">
+    github.com/grxkun/getlawb · MIT License
+  </text>
+
+  <!-- Bottom accent line -->
+  <rect x="0" y="718" width="1280" height="2" fill="url(#lineGrad)" opacity="0.4"/>
+</svg>

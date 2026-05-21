@@ -1,3 +1,5 @@
+<img src="assets/banner.svg" alt="getlawb" width="100%"/>
+
 # getlawb
 
 **Automated legal reasoning for Web3 — the legal front desk of the [gitlawb](https://gitlawb.com) ecosystem.**
