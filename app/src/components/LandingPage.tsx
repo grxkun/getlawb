@@ -1,4 +1,52 @@
+import { useEffect, useRef, useState } from 'react';
 import './LandingPage.css';
+
+const LEX_INTRO =
+  "Hello! I'm Lex, your AI legal front desk assistant on the gitlawb network. " +
+  "I help Web3 teams with smart contract audits, token regulatory checks, DAO governance validation, and DeFi compliance. " +
+  "Just click Talk to Lex to get started — I'm here whenever you need legal guidance.";
+
+function useLexVoice() {
+  const [speaking, setSpeaking] = useState(false);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const speak = () => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(LEX_INTRO);
+    u.rate = 0.92;
+    u.pitch = 1.05;
+    u.volume = 1;
+    // Prefer a natural English voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(
+      (v) => v.lang.startsWith('en') && (v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Samantha'))
+    ) ?? voices.find((v) => v.lang.startsWith('en'));
+    if (preferred) u.voice = preferred;
+    u.onstart = () => setSpeaking(true);
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    utteranceRef.current = u;
+    window.speechSynthesis.speak(u);
+  };
+
+  const stop = () => {
+    window.speechSynthesis?.cancel();
+    setSpeaking(false);
+  };
+
+  // Auto-play on mount (works without gesture in most browsers for speech synthesis)
+  useEffect(() => {
+    const timer = setTimeout(speak, 800);
+    return () => {
+      clearTimeout(timer);
+      window.speechSynthesis?.cancel();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { speaking, speak, stop };
+}
 
 const FEATURES = [
   { icon: '📋', title: 'Contract Audit', desc: 'Instant regulatory review of Solidity smart contracts. Flags liability gaps before deployment.' },
@@ -15,6 +63,8 @@ const STATS = [
 ];
 
 export function LandingPage({ onEnter }: { onEnter: () => void }) {
+  const { speaking, speak, stop } = useLexVoice();
+
   return (
     <div className="landing">
       {/* Nav */}
@@ -35,9 +85,25 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
       {/* Hero */}
       <section className="hero">
-        <div className="hero-badge">
-          <span className="badge-pulse" />
-          Lex is online · gitlawb network
+        <div className="hero-badge-row">
+          <div className="hero-badge">
+            <span className="badge-pulse" />
+            Lex is online · gitlawb network
+          </div>
+          <button
+            className={`voice-btn ${speaking ? 'voice-btn-active' : ''}`}
+            onClick={speaking ? stop : speak}
+            title={speaking ? 'Stop' : 'Hear Lex introduce herself'}
+          >
+            {speaking ? (
+              <>
+                <span className="voice-wave"><span/><span/><span/><span/></span>
+                Stop
+              </>
+            ) : (
+              <>🔊 Hear Lex</>
+            )}
+          </button>
         </div>
 
         <h1 className="hero-title">

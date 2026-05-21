@@ -46,6 +46,15 @@
   pointer-events: none;
 }
 
+.hero-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .hero-badge {
   display: inline-flex;
   align-items: center;
@@ -56,7 +65,47 @@
   border: 1px solid var(--border);
   padding: 5px 12px;
   border-radius: 20px;
-  margin-bottom: 28px;
+}
+
+.voice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-family: var(--sans);
+  color: var(--text-dim);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.voice-btn:hover { border-color: var(--purple); color: var(--text); }
+.voice-btn-active { border-color: var(--purple); color: var(--purple); }
+
+/* Animated sound wave bars */
+.voice-wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 12px;
+}
+.voice-wave span {
+  display: block;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--purple);
+  animation: wave 0.8s ease-in-out infinite;
+}
+.voice-wave span:nth-child(1) { height: 4px;  animation-delay: 0s; }
+.voice-wave span:nth-child(2) { height: 10px; animation-delay: .1s; }
+.voice-wave span:nth-child(3) { height: 7px;  animation-delay: .2s; }
+.voice-wave span:nth-child(4) { height: 4px;  animation-delay: .3s; }
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(1); }
+  50%       { transform: scaleY(1.8); }
 }
 
 .badge-pulse {
