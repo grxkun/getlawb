@@ -70,7 +70,6 @@ describe('GitlawbIntegration', () => {
       // Access private method via casting for unit testing
       const headers = (integration as any).buildSignatureHeaders('POST', '/api/v1/agents', '{"test":1}');
 
-      expect(headers).toHaveProperty('date');
       expect(headers).toHaveProperty('signature');
       expect(headers).toHaveProperty('signature-input');
       expect(headers).toHaveProperty('content-digest');
@@ -82,6 +81,8 @@ describe('GitlawbIntegration', () => {
       // keyid in signature-input must match the DID
       expect(headers['signature-input']).toContain(`keyid="${testDid}"`);
       expect(headers['signature-input']).toContain('alg="ed25519"');
+      // created timestamp must be present
+      expect(headers['signature-input']).toMatch(/created=\d+/);
     });
 
     test('signature is verifiable with corresponding public key', () => {
@@ -98,12 +99,13 @@ describe('GitlawbIntegration', () => {
       // Reconstruct the signature base to verify
       const date = headers['date'];
       const contentDigest = headers['content-digest'];
+      const createdMatch = headers['signature-input'].match(/created=(\d+)/);
+      const created = createdMatch ? createdMatch[1] : '';
       const sigBase = [
         `"@method": POST`,
         `"@path": /api/v1/agents`,
-        `"date": ${date}`,
         `"content-digest": ${contentDigest}`,
-        `"@signature-params": ("@method" "@path" "date" "content-digest");keyid="${did}";alg="ed25519"`,
+        `"@signature-params": ("@method" "@path" "content-digest");keyid="${did}";alg="ed25519";created=${created}`,
       ].join('\n');
 
       // Extract raw signature bytes
