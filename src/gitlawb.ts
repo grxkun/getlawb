@@ -364,9 +364,9 @@ export class GitlawbIntegration {
     path: string,
     body: string
   ): Record<string, string> {
-    const date = new Date().toUTCString();
-    const coveredComponents = ['"@method"', '"@path"', '"date"'];
-    const headers: Record<string, string> = { date };
+    const created = Math.floor(Date.now() / 1000);
+    const coveredComponents = ['"@method"', '"@path"'];
+    const headers: Record<string, string> = {};
 
     if (body) {
       const digest = crypto.createHash('sha256').update(body, 'utf8').digest('base64');
@@ -374,19 +374,19 @@ export class GitlawbIntegration {
       coveredComponents.push('"content-digest"');
     }
 
+    const sigParams = `(${coveredComponents.join(' ')});keyid="${this.did}";alg="ed25519";created=${created}`;
+
     // Signature base per RFC 9421 §2.5
     const sigBase = [
       `"@method": ${method.toUpperCase()}`,
       `"@path": ${path}`,
-      `"date": ${date}`,
       ...(body ? [`"content-digest": ${headers['content-digest']}`] : []),
-      `"@signature-params": (${coveredComponents.join(' ')});keyid="${this.did}";alg="ed25519"`,
+      `"@signature-params": ${sigParams}`,
     ].join('\n');
 
     const sig = crypto.sign(null, Buffer.from(sigBase, 'utf8'), this.privateKey);
 
-    headers['signature-input'] =
-      `sig1=(${coveredComponents.join(' ')});keyid="${this.did}";alg="ed25519"`;
+    headers['signature-input'] = `sig1=${sigParams}`;
     headers['signature'] = `sig1=:${sig.toString('base64')}:`;
 
     return headers;
